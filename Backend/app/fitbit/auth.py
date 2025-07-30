@@ -13,17 +13,15 @@ router = APIRouter()
 code_verifiers = {}
 
 def generate_code_verifier():
-    """Generate a cryptographically random code verifier (43-128 characters)"""
     return base64.urlsafe_b64encode(secrets.token_bytes(32)).decode('utf-8').rstrip('=')
 
 def generate_code_challenge(verifier):
-    """Generate code challenge from verifier using SHA256"""
     digest = hashlib.sha256(verifier.encode('utf-8')).digest()
     return base64.urlsafe_b64encode(digest).decode('utf-8').rstrip('=')
 
 @router.get("/fitbit/login")
 def fitbit_login():
-    # Generate PKCE values
+    
     code_verifier = generate_code_verifier()
     code_challenge = generate_code_challenge(code_verifier)
     
@@ -34,14 +32,13 @@ def fitbit_login():
     params = {
         "client_id": FITBIT_CLIENT_ID,
         "response_type": "code",
-        "scope": "activity heartrate sleep profile",  # Space-separated
+        "scope": "activity heartrate sleep profile",  
         "redirect_uri": FITBIT_REDIRECT_URI,
         "code_challenge": code_challenge,
         "code_challenge_method": "S256",
-        "state": state  # Anti-CSRF protection
+        "state": state
     }
     
-    # URL encode the parameters properly
     query = urlencode(params, quote_via=quote)
     return {
         "url": f"https://www.fitbit.com/oauth2/authorize?{query}",
@@ -51,8 +48,8 @@ def fitbit_login():
     
 @router.get("/fitbit/callback")
 def fitbit_callback(code: str, state: str = None):
-    print("✅ Received code from Fitbit:", code)
-    print("✅ Received state:", state)
+    print(" Received code from Fitbit:", code)
+    print(" Received state:", state)
     
     # Verify state and get code verifier
     if not state or state not in code_verifiers:
