@@ -48,14 +48,11 @@ def fitbit_login():
     
 @router.get("/fitbit/callback")
 def fitbit_callback(code: str, state: str = None):
-    print(" Received code from Fitbit:", code)
-    print(" Received state:", state)
-    
     # Verify state and get code verifier
     if not state or state not in code_verifiers:
         return {"error": "Invalid state parameter - possible CSRF attack"}
     
-    code_verifier = code_verifiers.pop(state)  # Remove after use
+    code_verifier = code_verifiers.pop(state)
     
     # Build the Basic Auth header (base64(client_id:client_secret))
     credentials = f"{FITBIT_CLIENT_ID}:{FITBIT_CLIENT_SECRET}"
