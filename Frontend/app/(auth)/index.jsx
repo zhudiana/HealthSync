@@ -15,15 +15,29 @@ import Spacer from "../../components/Spacer";
 import ThemedText from "../../components/ThemedText";
 import { Colors } from "../../constants/Colors";
 import ThemedButton from "../../components/ThemedButton";
+import * as SecureStore from "expo-secure-store";
+import { generateCodeVerifier, generateCodeChallenge } from "../../utils/pkce";
 
 const Login = () => {
   const handleSubmit = async () => {
     try {
-      const res = await fetch("http://192.168.137.32:8000/fitbit/login");
-      const data = await res.json();
-      const authUrl = data.url;
-      const state = data.state;
+      const verifier = generateCodeVerifier();
+      const challenge = await generateCodeChallenge(verifier);
 
+      await SecureStore.setItemAsync("fitbit_verifier", verifier);
+
+      const params = new URLSearchParams({
+        client_id: "23QPTP",
+        response_type: "code",
+        scope: "activity heartrate sleep profile",
+        redirect_uri:
+          "https://310a8db79933.ngrok-free.app/fitbit/mobile-callback",
+        code_challenge: challenge,
+        code_challenge_method: "S256",
+        state: "<optional_random_state>",
+      });
+
+      const authUrl = `https://www.fitbit.com/oauth2/authorize?${params.toString()}`;
       await Linking.openURL(authUrl);
     } catch (error) {
       console.log("Fitbit login failed: ", error);
@@ -35,23 +49,22 @@ const Login = () => {
       const url = event.url;
       const parsed = new URL(url);
       const code = parsed.searchParams.get("code");
-      const state = parsed.searchParams.get("state");
 
-      if (code && state) {
-        // Send code & state to FastAPI to get tokens
-        const res = await fetch("http://192.168.137.32:8000/fitbit/callback", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code, state }),
-        });
+      if (code) {
+        const verifier = await SecureStore.getItemAsync("fitbit_verifier");
 
-        if (res.ok) {
-          const result = await res.json();
-          console.log("✅ Logged in:", result);
-          router.replace("/profile"); // Move to dashboard
-        } else {
-          console.error("❌ Failed to exchange code");
-        }
+        const res = await fetch(
+          " https://310a8db79933.ngrok-free.app/fitbit/token",
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ code, code_verifier: verifier }),
+          }
+        );
+
+        const result = await res.json();
+        console.log("✅ Logged in:", result);
+        router.replace("/profile");
       }
     };
 

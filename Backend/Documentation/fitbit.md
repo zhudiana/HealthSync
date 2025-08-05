@@ -57,3 +57,9 @@
 ### Refresh Tokens
 
 - The access token expires after some time. When this happens, our app should use the <b>Refresh Token</b> to get a new pair of tokens.
+
+### Session
+
+- A session is a way for a web server to store data about a specific user across multiple HTTP requests.
+
+- Because HTTP is stateless (every request is brand new, HTTP doesn't have memory of past request), a session helps the server "remember" your identity and related data temporarily.
